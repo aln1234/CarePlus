@@ -87,7 +87,6 @@ export const registerPatient = async ({
         ...patient,
       }
     );
-    console.log(newPatient, "new Patient");
 
     return parseStringify(newPatient);
   } catch (error) {
@@ -103,7 +102,6 @@ export const getPatient = async (userId: string) => {
       PATIENT_COLLECTION_ID!,
       [Query.equal("userId", [userId])]
     );
-
     return parseStringify(patients.documents[0]);
   } catch (error) {
     console.error(
