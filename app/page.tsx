@@ -1,6 +1,6 @@
 import { PatientForm } from "@/components/forms/PatientForm";
 import { Button } from "@/components/ui/button";
-import PassKeyModal from "@/components/ui/PassKeyModal";
+import { PasskeyModal } from "@/components/ui/PassKeyModal";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,7 @@ export default function Home({ searchParams }: SearchParamProps) {
 
   return (
     <div className="flex h-screen max-h-screen">
-      {isAdmin && <PassKeyModal />}
+      {isAdmin && <PasskeyModal />}
       <Image
         src="/assets/images/login_pic.jpg"
         width={1000}
@@ -26,7 +26,7 @@ export default function Home({ searchParams }: SearchParamProps) {
             <p className="justify-items-end text-dark-600 xl:text-left">
               © 2024 Scheduler
             </p>
-            <Link href="/?admin=true" className="text-jade-500">
+            <Link href="/?admin=true" className="text-green-500">
               Admin
             </Link>
           </div>

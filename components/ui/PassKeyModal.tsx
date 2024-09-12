@@ -1,58 +1,78 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
 import {
   InputOTP,
   InputOTPGroup,
-  InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { decryptKey, encryptKey } from "@/lib/utils";
-import { testSms } from "@/lib/actions/appointment.action";
 
-const PassKeyModal = () => {
-  const [open, setOpen] = useState(true);
+export const PasskeyModal = () => {
+  const router = useRouter();
   const path = usePathname();
+  const [open, setOpen] = useState(false);
   const [passkey, setPasskey] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter();
 
-  const encryptedKey =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem("accessKey")
-      : null;
+  const saveAccessKeyWithExpiry = (
+    key: string,
+    value: string,
+    expiryInMinutes: number
+  ) => {
+    const now = new Date();
+
+    // Expiry time in Minutes
+    const item = {
+      value: encryptKey(value), // Encypt the passkey before storing
+      expiry: now.getTime() + expiryInMinutes * 60 * 1000,
+    };
+    localStorage.setItem(key, JSON.stringify(item));
+  };
+
+  const getAccessKeyWithExpiry = (key: string) => {
+    const itemStr = localStorage.getItem(key);
+
+    // If the item doesnot exist, return null
+
+    if (!itemStr) {
+      return null;
+    }
+
+    const item = JSON.parse(itemStr);
+    const now = new Date();
+
+    // If the current time is greater than the expiry time, the has expired
+    if (now.getTime() > item.expiry) {
+      localStorage.removeItem(key);
+      return null;
+    }
+
+    return decryptKey(item.value);
+  };
 
   useEffect(() => {
-    const accessKey = encryptedKey && decryptKey(encryptedKey);
+    const accessKey = getAccessKeyWithExpiry("accessKey");
 
-    if (path)
-      if (accessKey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY!.toString()) {
-        setOpen(false);
-        router.push("/admin");
-      } else {
-        setOpen(true);
-      }
-  }, [encryptedKey]);
-
-  const closeModal = async () => {
-    // const testsms = await testSms();
-    setOpen(false);
-    router.push("/");
-  };
+    if (accessKey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY!.toString()) {
+      setOpen(false);
+      router.push("/admin");
+    } else {
+      setOpen(true);
+    }
+  }, []);
 
   const validatePasskey = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -60,14 +80,21 @@ const PassKeyModal = () => {
     e.preventDefault();
 
     if (passkey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY) {
-      const encryptedKey = encryptKey(passkey);
+      // Save access key with an expiry time (e.g., 30 minutes)
+      saveAccessKeyWithExpiry("accessKey", passkey, 30);
 
-      localStorage.setItem("accessKey", encryptedKey);
       setOpen(false);
+      router.push("/admin");
     } else {
-      setError("Invalid Passkey. Please try again");
+      setError("Invalid passkey. Please try again.");
     }
   };
+
+  const closeModal = () => {
+    setOpen(false);
+    router.push("/");
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogContent className="shad-alert-dialog">
@@ -121,5 +148,3 @@ const PassKeyModal = () => {
     </AlertDialog>
   );
 };
-
-export default PassKeyModal;
